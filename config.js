@@ -18,6 +18,19 @@ window.TXIORG_CONFIG = {
   paypalClientId: "",
   currency: "USD",
 
+  // Assembly dropdown on the registration form, grouped by area.
+  // Taken from the Find An Assembly page on txiorg.org. "Other" is added automatically.
+  assemblies: {
+    "Dallas": ["Dallas #33", "Henderson Co. #369", "Kilgore #168", "North Texas #383", "Plano #320",
+      "Richardson #291", "Roy Stanley #127", "Sunshine #375"],
+    "Fort Worth": ["Alvarado #68", "Arlington #96", "Brazos River LT #385", "Burleson #374", "Fort Worth #15",
+      "Heart of Texas #386", "Rose #382"],
+    "Houston": ["Conroe #73", "Houston #8", "Melrose #167", "Mid County #159", "Pearland #337",
+      "Trinity River #379", "West Side #233"],
+    "San Antonio": ["Austin #5", "Liberty-Waco #18", "New Braunfels #277", "San Antonio #3", "Schertz #280"],
+    "West Texas": ["Abilene #86", "Amarillo-Palo Duro", "El Paso #4", "Horizon #384"]
+  },
+
   // Shown when someone chooses to pay by check.
   check: {
     payableTo: "Grand Assembly of Texas IORG",

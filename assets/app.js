@@ -196,6 +196,21 @@
     return '<div class="' + (opts.full ? "full" : "") + '"><label for="' + idAttr + '">' + esc(label) + star + hint + "</label>" + input + "</div>";
   }
 
+  function assemblyField() {
+    var groups = C.assemblies;
+    if (!groups) return field("assembly", "Assembly name and number", "text", { required: true, full: true, hint: "(for example, Austin #5)" });
+    var opts = Object.keys(groups).map(function (area) {
+      return '<optgroup label="' + esc(area) + '">' + groups[area].map(function (n) {
+        return '<option value="' + esc(n) + '">' + esc(n) + "</option>";
+      }).join("") + "</optgroup>";
+    }).join("");
+    return '<div class="full"><label for="f-assembly">Assembly <span class="req" aria-hidden="true">*</span></label>' +
+      '<select id="f-assembly" name="assembly" required><option value="">Choose your assembly…</option>' + opts +
+      '<option value="__other">Other (pledge group, Grand officer, guest)</option></select></div>' +
+      '<div class="full" id="assembly-other-wrap" hidden><label for="f-assemblyOther">Tell us which group <span class="req" aria-hidden="true">*</span></label>' +
+      '<input id="f-assemblyOther" type="text" name="assemblyOther"></div>';
+  }
+
   function formHtml(ev) {
     var paid = !isFree(ev);
     var max = ev.maxAttendees || 25;
@@ -207,7 +222,7 @@
           field("lastName", "Last name", "text", { required: true, autocomplete: "family-name" }) +
           field("email", "Email", "email", { required: true, autocomplete: "email" }) +
           field("phone", "Mobile phone", "tel", { required: true, autocomplete: "tel" }) +
-          (ev.askAssembly !== false ? field("assembly", "Assembly name and number", "text", { required: true, full: true, hint: "(for example, Austin No. 5)" }) : "") +
+          (ev.askAssembly !== false ? assemblyField() : "") +
         "</div>" +
       "</fieldset></section>" +
 
@@ -313,6 +328,16 @@
 
     addAttendee();
 
+    var asm = form.elements.assembly;
+    if (asm && asm.tagName === "SELECT") {
+      asm.addEventListener("change", function () {
+        var other = asm.value === "__other";
+        $("#assembly-other-wrap").hidden = !other;
+        form.elements.assemblyOther.required = other;
+        if (other) form.elements.assemblyOther.focus();
+      });
+    }
+
     form.addEventListener("submit", function (e) {
       e.preventDefault();
       var errBox = $("#form-error");
@@ -372,7 +397,8 @@
       eventId: ev.id,
       registrant: {
         firstName: v("firstName"), lastName: v("lastName"),
-        email: v("email"), phone: v("phone"), assembly: v("assembly")
+        email: v("email"), phone: v("phone"),
+        assembly: v("assembly") === "__other" ? "Other: " + v("assemblyOther") : v("assembly")
       },
       attendees: attendees,
       notes: v("notes"),
