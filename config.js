@@ -12,7 +12,7 @@ window.TXIORG_CONFIG = {
 
   // The Google Apps Script web app URL (ends in /exec).
   // Leave empty to run in demo mode: nothing is saved and payments are simulated.
-  endpoint: "",
+  endpoint: "https://script.google.com/macros/s/AKfycbzMGlqXmenEZdjmaDyyL0lYA4tJf0ReqtXQ5p2_PFK57ZmzDDIiyMiClh9nsKSorfbqZQ/exec",
 
   // PayPal REST app Client ID (public, safe to put here). The secret goes in Apps Script, never here.
   paypalClientId: "",
