@@ -7,7 +7,6 @@
     "location": "Grand Lodge of Texas Library and Museum",
     "address": "715 Columbus Ave\nWaco, TX 76701",
     "summary": "Texas IORG Mid-Year in Waco.",
-    "description": "Registration is $30 per person and closes January 15, 2027.",
     "deadline": "2027-01-15",
     "open": true,
     "askAssembly": true,
@@ -28,9 +27,53 @@
     ],
     "attendeeFields": [
       {
+        "id": "age",
+        "label": "Age",
+        "type": "select",
+        "tickets": [
+          "girl"
+        ],
+        "required": true,
+        "options": [
+          "11",
+          "12",
+          "13",
+          "14",
+          "15",
+          "16",
+          "17",
+          "18",
+          "19",
+          "20"
+        ]
+      },
+      {
+        "id": "ritual",
+        "label": "She will compete in the Ritual Competition",
+        "type": "checkbox",
+        "tickets": [
+          "girl"
+        ]
+      },
+      {
+        "id": "competition",
+        "label": "Competition (one per girl)",
+        "type": "select",
+        "tickets": [
+          "girl"
+        ],
+        "showWhen": "ritual",
+        "required": true,
+        "options": [
+          "Rose Ceremony",
+          "Masonic Ribbon Ceremony"
+        ]
+      },
+      {
         "id": "diet",
         "label": "Food allergies or dietary needs",
-        "type": "text"
+        "type": "text",
+        "full": true
       }
     ],
     "waiver": "I give permission for the girls I am registering to take part in this event, and I confirm the information above is correct."

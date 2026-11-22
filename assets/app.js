@@ -17,6 +17,10 @@
     });
   }
   function money(n) {
+    n = Number(n || 0);
+    return n.toLocaleString("en-US", { style: "currency", currency: CURRENCY, minimumFractionDigits: n % 1 ? 2 : 0 });
+  }
+  function moneyExact(n) {
     return Number(n || 0).toLocaleString("en-US", { style: "currency", currency: CURRENCY });
   }
   function parseDay(iso) { return new Date(iso + "T12:00:00"); }
@@ -24,7 +28,7 @@
     return parseDay(iso).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
   }
   function fmtShort(iso) {
-    return parseDay(iso).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+    return parseDay(iso).toLocaleDateString("en-US", { month: "long", day: "numeric" });
   }
   function today() { var d = new Date(); d.setHours(0, 0, 0, 0); return d; }
 
@@ -37,23 +41,9 @@
   function isFree(ev) { return ev.tickets.every(function (t) { return !t.price; }); }
   function priceText(ev) {
     if (isFree(ev)) return "Free";
-    return ev.tickets.map(function (t) { return t.label + " " + (t.price ? money(t.price) : "free"); }).join(" · ");
-  }
-
-  function metaList(ev) {
-    var where = "";
-    if (ev.location) where += "<strong>" + esc(ev.location) + "</strong>";
-    if (ev.address) {
-      where += (where ? "<br>" : "") + esc(ev.address).replace(/\n/g, "<br>");
-      var q = [ev.location, String(ev.address).replace(/\n/g, ", ")].filter(Boolean).join(", ");
-      where += '<br><a href="https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(q) + '" target="_blank" rel="noopener">Get directions</a>';
-    }
-    return '<dl class="event-meta">' +
-      "<dt>When</dt><dd>" + esc(fmtDate(ev.date)) + (ev.time ? "<br>" + esc(ev.time) : "") + "</dd>" +
-      (where ? "<dt>Where</dt><dd>" + where + "</dd>" : "") +
-      "<dt>Cost</dt><dd>" + esc(priceText(ev)) + "</dd>" +
-      (ev.deadline ? "<dt>Register by</dt><dd>" + esc(fmtShort(ev.deadline)) + "</dd>" : "") +
-    "</dl>";
+    var prices = ev.tickets.map(function (t) { return Number(t.price || 0); });
+    if (prices.every(function (p) { return p === prices[0]; })) return money(prices[0]) + " per person";
+    return ev.tickets.map(function (t) { return t.label + ", " + (t.price ? money(t.price) : "free"); }).join("<br>");
   }
 
   function loadEvents() {
@@ -82,11 +72,6 @@
       setTimeout(function () {
         if (body.action === "register") {
           var ref = "TX-" + Math.random().toString(36).slice(2, 8).toUpperCase();
-          try {
-            var all = JSON.parse(localStorage.getItem("txiorg-demo") || "[]");
-            all.push(Object.assign({ ref: ref, at: new Date().toISOString() }, body));
-            localStorage.setItem("txiorg-demo", JSON.stringify(all));
-          } catch (e) { /* storage may be blocked; fine for a demo */ }
           resolve({ ok: true, ref: ref, total: body._total, status: body._total ? "Awaiting payment" : "Complete" });
         } else {
           resolve({ ok: true, status: "Paid" });
@@ -116,6 +101,56 @@
     container.innerHTML = '<div class="notice error"><p>' + esc(msg) + "</p></div>";
   }
 
+  // ---------- the ticket ----------
+  function stub(ev) {
+    var d = parseDay(ev.date);
+    return '<div class="stub">' +
+      '<span class="day">' + d.getDate() + "</span>" +
+      '<span class="md"><span class="month">' + esc(d.toLocaleDateString("en-US", { month: "long" })) + "</span>" +
+      '<span class="weekday">' + esc(d.toLocaleDateString("en-US", { weekday: "long" })) + ", " + d.getFullYear() + "</span></span>" +
+    "</div>";
+  }
+
+  function details(ev) {
+    var where = "";
+    if (ev.location) where += "<strong>" + esc(ev.location) + "</strong>";
+    if (ev.address) {
+      where += (where ? "<br>" : "") + esc(ev.address).replace(/\n/g, "<br>");
+      var q = [ev.location, String(ev.address).replace(/\n/g, ", ")].filter(Boolean).join(", ");
+      where += '<br><a href="https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(q) + '" target="_blank" rel="noopener">Get directions</a>';
+    }
+    return '<dl class="details">' +
+      "<dt>When</dt><dd>" + esc(fmtDate(ev.date)) + (ev.time ? "<br>" + esc(ev.time) : "") + "</dd>" +
+      (where ? "<dt>Where</dt><dd>" + where + "</dd>" : "") +
+      "<dt>Cost</dt><dd>" + priceText(ev) + "</dd>" +
+    "</dl>";
+  }
+
+  function ticket(ev, opts) {
+    opts = opts || {};
+    var open = isOpen(ev);
+    var heading = opts.page ? "h1" : "h2";
+    var foot = "";
+    if (opts.page) {
+      foot = ev.deadline ? '<p class="closes">Registration closes ' + esc(fmtShort(ev.deadline)) + ".</p>" : "";
+    } else {
+      foot = '<div class="ticket-foot">' +
+        (open
+          ? '<a class="btn" href="register.html?event=' + encodeURIComponent(ev.id) + '">Register</a>' +
+            (ev.deadline ? '<span class="closes">Closes ' + esc(fmtShort(ev.deadline)) + "</span>" : "")
+          : '<span class="closed">Registration is closed</span>') +
+      "</div>";
+    }
+    return '<article class="ticket">' + stub(ev) +
+      '<div class="ticket-body">' +
+        "<" + heading + ">" + esc(ev.title) + "</" + heading + ">" +
+        (ev.summary ? '<p class="summary">' + esc(ev.summary) + "</p>" : "") +
+        details(ev) +
+        (opts.page && ev.description ? "<p>" + esc(ev.description) + "</p>" : "") +
+        foot +
+      "</div></article>";
+  }
+
   // ---------- event list page ----------
   function renderEventList() {
     footer(); demoBanner();
@@ -125,22 +160,10 @@
         .filter(function (ev) { return parseDay(ev.date) >= today(); })
         .sort(function (a, b) { return a.date < b.date ? -1 : 1; });
       if (!upcoming.length) {
-        list.innerHTML = '<div class="panel"><p>No events are open right now. Check back soon.</p></div>';
+        list.innerHTML = '<div class="panel"><p>No events are open for registration right now. New events are posted here as soon as dates are set.</p></div>';
         return;
       }
-      list.innerHTML = upcoming.map(function (ev) {
-        var open = isOpen(ev);
-        return '<article class="panel event-card">' +
-          "<h2>" + esc(ev.title) + "</h2>" +
-          (ev.summary ? "<p>" + esc(ev.summary) + "</p>" : "") +
-          metaList(ev) +
-          '<div class="actions">' +
-            (open
-              ? '<a class="btn" href="register.html?event=' + encodeURIComponent(ev.id) + '">Register</a>'
-              : '<span class="tag closed">Registration closed</span>') +
-          "</div>" +
-        "</article>";
-      }).join("");
+      list.innerHTML = upcoming.map(function (ev) { return ticket(ev); }).join("");
     }).catch(function (err) { showError(list, err.message + " If you opened this file directly, serve the folder from a web server instead."); });
   }
 
@@ -153,25 +176,17 @@
     var id = new URLSearchParams(location.search).get("event");
     loadEvents().then(function (events) {
       var ev = events.find(function (e) { return e.id === id; });
-      if (!ev) { showError(app, "We couldn't find that event. Go back to the event list and pick one."); return; }
+      if (!ev) { showError(app, "That event isn't on the list. Go back to all events and pick one."); return; }
       state.ev = ev;
       document.title = "Register: " + ev.title + " | " + (C.orgName || "Texas IORG");
       if (!isOpen(ev)) {
-        app.innerHTML = eventPanel(ev) + '<div class="notice warn"><p>Registration for this event is closed.' +
+        app.innerHTML = ticket(ev, { page: true }) + '<div class="panel"><p>Registration for this event is closed.' +
           (C.contactEmail ? ' Email <a href="mailto:' + esc(C.contactEmail) + '">' + esc(C.contactEmail) + "</a> if you need help." : "") + "</p></div>";
         return;
       }
-      app.innerHTML = eventPanel(ev) + formHtml(ev);
+      app.innerHTML = ticket(ev, { page: true }) + formHtml(ev);
       wireForm(ev);
     }).catch(function (err) { showError(app, err.message); });
-  }
-
-  function eventPanel(ev) {
-    return '<section class="panel event-card">' +
-      "<h1>" + esc(ev.title) + "</h1>" +
-      metaList(ev) +
-      (ev.description ? "<p>" + esc(ev.description) + "</p>" : "") +
-    "</section>";
   }
 
   function field(name, label, type, opts) {
@@ -207,16 +222,20 @@
     return '<div class="full"><label for="f-assembly">Assembly <span class="req" aria-hidden="true">*</span></label>' +
       '<select id="f-assembly" name="assembly" required><option value="">Choose your assembly…</option>' + opts +
       '<option value="__other">Other (pledge group, Grand officer, guest)</option></select></div>' +
-      '<div class="full" id="assembly-other-wrap" hidden><label for="f-assemblyOther">Tell us which group <span class="req" aria-hidden="true">*</span></label>' +
+      '<div class="full" id="assembly-other-wrap" hidden><label for="f-assemblyOther">Which group? <span class="req" aria-hidden="true">*</span></label>' +
       '<input id="f-assemblyOther" type="text" name="assemblyOther"></div>';
+  }
+
+  function stepHead(n, title) {
+    return '<div class="step-head"><span class="step-n" aria-hidden="true">' + n + "</span><h2>" + esc(title) + "</h2></div>";
   }
 
   function formHtml(ev) {
     var paid = !isFree(ev);
     var max = ev.maxAttendees || 25;
-    return '<form id="reg-form" novalidate>' +
-      '<section class="panel"><fieldset><legend><h2>Your contact information</h2></legend>' +
-        '<p class="muted">We send the confirmation here. If you are registering girls from your assembly, use your own name.</p>' +
+    return '<form id="reg-form" class="sheet" novalidate>' +
+      '<fieldset class="step">' + stepHead(1, "Your contact information") +
+        '<p class="step-note">The confirmation goes to this email. If you are registering girls from your assembly, use your own name here.</p>' +
         '<div class="grid">' +
           field("firstName", "First name", "text", { required: true, autocomplete: "given-name" }) +
           field("lastName", "Last name", "text", { required: true, autocomplete: "family-name" }) +
@@ -224,41 +243,49 @@
           field("phone", "Mobile phone", "tel", { required: true, autocomplete: "tel" }) +
           (ev.askAssembly !== false ? assemblyField() : "") +
         "</div>" +
-      "</fieldset></section>" +
+      "</fieldset>" +
 
-      '<section class="panel"><h2>Who is attending?</h2>' +
-        '<p class="muted">Add everyone you are registering, up to ' + max + ".</p>" +
+      '<fieldset class="step">' + stepHead(2, "Who is coming?") +
+        '<p class="step-note">Add each girl and adult you are registering, up to ' + max + ".</p>" +
         '<div id="attendees"></div>' +
-        '<button type="button" class="btn secondary" id="add-attendee">+ Add another person</button>' +
-      "</section>" +
-
-      '<section class="panel"><h2>Anything else?</h2><div class="grid">' +
-        field("notes", "Notes for the event team", "textarea", { full: true }) +
-      "</div>" +
-      (ev.waiver ? '<label class="choice" style="margin-top:1rem"><input type="checkbox" name="waiver" required> <span>' + esc(ev.waiver) + ' <span class="req">*</span></span></label>' : "") +
-      '<div class="hp" aria-hidden="true"><label>Leave this empty <input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>' +
-      "</section>" +
+        '<button type="button" class="btn secondary" id="add-attendee">Add another person</button>' +
+        '<div class="grid">' + field("notes", "Notes for the event team", "textarea", { full: true }) + "</div>" +
+        (ev.waiver ? '<label class="choice"><input type="checkbox" name="waiver" required> <span>' + esc(ev.waiver) + ' <span class="req">*</span></span></label>' : "") +
+        '<div class="hp" aria-hidden="true"><label>Leave this empty <input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>' +
+      "</fieldset>" +
 
       (paid
-        ? '<section class="panel"><h2>How will you pay?</h2>' +
-            '<label class="choice"><input type="radio" name="method" value="online" checked> <span><strong>Online now</strong> by debit/credit card or PayPal</span></label>' +
-            (ev.allowCheck ? '<label class="choice"><input type="radio" name="method" value="check"> <span><strong>By check</strong>, mailed before the deadline</span></label>' : "") +
-          "</section>"
+        ? '<fieldset class="step">' + stepHead(3, "How will you pay?") +
+            '<label class="choice"><input type="radio" name="method" value="online" checked> <span><strong>Online now</strong> with a debit or credit card, or PayPal</span></label>' +
+            (ev.allowCheck ? '<label class="choice"><input type="radio" name="method" value="check"> <span><strong>By check</strong>, mailed so it arrives by ' + esc(fmtShort(ev.deadline || ev.date)) + "</span></label>" : "") +
+          "</fieldset>"
         : "") +
 
-      '<div class="total-bar"><span>Total</span><span class="amount" id="total">' + money(0) + "</span></div>" +
-      '<div id="form-error"></div>' +
-      '<button type="submit" class="btn" id="submit-btn">' + (paid ? "Continue" : "Submit registration") + "</button>" +
+      '<aside class="receipt" aria-live="polite"><h3>Your registration</h3><div id="receipt-lines"></div></aside>' +
+      '<div class="form-actions"><div id="form-error"></div>' +
+        '<button type="submit" class="btn" id="submit-btn">' + (paid ? "Continue to payment" : "Register") + "</button>" +
+      "</div>" +
     "</form>";
   }
 
   function attendeeHtml(ev, n) {
     var p = "a" + n + "_";
     var ticketOpts = ev.tickets.map(function (t) {
-      return { value: t.id, label: t.label + (t.price ? " – " + money(t.price) : (isFree(ev) ? "" : " – free")) };
+      return { value: t.id, label: t.label + (t.price ? ", " + money(t.price) : (isFree(ev) ? "" : ", free")) };
     });
     var extras = (ev.attendeeFields || []).map(function (f) {
-      return field(p + "x_" + f.id, f.label, f.type || "text", { required: !!f.required, options: f.options || [] });
+      var html;
+      if (f.type === "checkbox") {
+        html = '<label class="choice"><input type="checkbox" name="' + esc(p + "x_" + f.id) + '" value="Yes"> <span>' + esc(f.label) + "</span></label>";
+      } else {
+        html = field(p + "x_" + f.id, f.label, f.type || "text", { required: !!f.required, options: f.options || [], hint: f.hint });
+      }
+      var cond = f.tickets || f.showWhen;
+      return '<div class="extra' + (f.type === "checkbox" || f.full ? " full" : "") + '" data-field="' + esc(f.id) + '"' +
+        (f.tickets ? ' data-tickets="' + esc(f.tickets.join(",")) + '"' : "") +
+        (f.showWhen ? ' data-show-when="' + esc(f.showWhen) + '"' : "") +
+        (f.required ? ' data-required="1"' : "") + (cond ? " hidden" : "") + ">" +
+        html.replace(/^<div class="[^"]*">/, "").replace(/<\/div>$/, "") + "</div>";
     }).join("");
     return '<div class="attendee" data-n="' + n + '">' +
       '<div class="attendee-head"><h3>Person <span class="num"></span></h3>' +
@@ -287,7 +314,7 @@
         $(".remove", c).hidden = cards.length === 1;
       });
       $("#add-attendee").hidden = cards.length >= max;
-      updateTotal();
+      updateReceipt();
     }
 
     function addAttendee() {
@@ -307,13 +334,39 @@
       var minor = !!(t && t.minor);
       g.hidden = !minor;
       $all("input", g).forEach(function (i) { i.required = minor; });
+      syncExtras(card);
+    }
+
+    // Show per-person questions only for the right registration type,
+    // and follow-up questions only when their checkbox is ticked.
+    function syncExtras(card) {
+      var ticketId = $("select[name$='_ticket']", card).value;
+      var p = "a" + card.getAttribute("data-n") + "_x_";
+      $all(".extra", card).forEach(function (wrap) {
+        var show = true;
+        var tk = wrap.getAttribute("data-tickets");
+        if (tk) show = tk.split(",").indexOf(ticketId) >= 0;
+        var dep = wrap.getAttribute("data-show-when");
+        if (show && dep) {
+          var box = card.querySelector("[name='" + p + dep + "']");
+          var depWrap = box && box.closest(".extra");
+          show = !!(box && box.checked && !(depWrap && depWrap.hidden));
+        }
+        wrap.hidden = !show;
+        $all("input, select, textarea", wrap).forEach(function (el) {
+          if (el.type !== "checkbox") el.required = show && wrap.getAttribute("data-required") === "1";
+          if (!show) { if (el.type === "checkbox") el.checked = false; else el.value = ""; }
+        });
+      });
     }
 
     box.addEventListener("change", function (e) {
-      if (e.target.name && /_ticket$/.test(e.target.name)) {
-        syncGuardian(e.target.closest(".attendee"));
-        updateTotal();
-      }
+      if (e.target.name && /_ticket$/.test(e.target.name)) syncGuardian(e.target.closest(".attendee"));
+      else if (e.target.type === "checkbox") syncExtras(e.target.closest(".attendee"));
+      updateReceipt();
+    });
+    box.addEventListener("input", function (e) {
+      if (e.target.name && /_(firstName|lastName)$/.test(e.target.name)) updateReceipt();
     });
     box.addEventListener("click", function (e) {
       if (e.target.classList.contains("remove")) {
@@ -348,28 +401,45 @@
       }
       var data = collect(ev);
       var btn = $("#submit-btn");
+      var label = btn.textContent;
       btn.disabled = true;
-      btn.textContent = "Saving…";
+      btn.textContent = "Saving your registration…";
       data._total = data.total; // used by demo mode only; the server recomputes the total
       api("register", data).then(function (res) {
         afterRegister(ev, data, res);
       }).catch(function (err) {
-        errBox.innerHTML = '<div class="notice error"><p>' + esc(err.message) + " Please try again, or email " + esc(C.contactEmail || "us") + ".</p></div>";
+        errBox.innerHTML = '<div class="notice error"><p>Your registration was not saved: ' + esc(err.message) +
+          " Try again, or email " + esc(C.contactEmail || "the event team") + ".</p></div>";
         btn.disabled = false;
-        btn.textContent = isFree(ev) ? "Submit registration" : "Continue";
+        btn.textContent = label;
       });
     });
   }
 
-  function updateTotal() {
-    var ev = state.ev, sum = 0;
-    $all("select[name$='_ticket']").forEach(function (s) {
-      var t = ev.tickets.find(function (x) { return x.id === s.value; });
-      if (t) sum += Number(t.price || 0);
+  function currentLines() {
+    var ev = state.ev;
+    return $all(".attendee").map(function (card, i) {
+      var p = "a" + card.getAttribute("data-n") + "_";
+      var name = [$("[name='" + p + "firstName']", card).value, $("[name='" + p + "lastName']", card).value].join(" ").trim();
+      var t = ev.tickets.find(function (x) { return x.id === $("[name='" + p + "ticket']", card).value; });
+      return { name: name || "Person " + (i + 1), label: t ? t.label : "", price: t ? Number(t.price || 0) : null };
     });
-    var el = $("#total");
-    if (el) el.textContent = money(sum);
-    return sum;
+  }
+
+  function receiptHtml(lines, total) {
+    var picked = lines.filter(function (l) { return l.price !== null; });
+    if (!picked.length) return '<p class="empty">Choose who each person is registering as to see the total.</p>';
+    return "<ul>" + picked.map(function (l) {
+      return "<li><span>" + esc(l.name) + (l.label ? ", " + esc(l.label) : "") + "</span><span>" + moneyExact(l.price) + "</span></li>";
+    }).join("") + '</ul><div class="total"><span>Total</span><span>' + moneyExact(total) + "</span></div>";
+  }
+
+  function updateReceipt() {
+    var lines = currentLines();
+    var total = lines.reduce(function (s, l) { return s + (l.price || 0); }, 0);
+    var el = $("#receipt-lines");
+    if (el) el.innerHTML = receiptHtml(lines, total);
+    return total;
   }
 
   function collect(ev) {
@@ -379,7 +449,12 @@
       var p = "a" + card.getAttribute("data-n") + "_";
       var t = ev.tickets.find(function (x) { return x.id === v(p + "ticket"); });
       var extra = {};
-      (ev.attendeeFields || []).forEach(function (f) { extra[f.label] = v(p + "x_" + f.id); });
+      (ev.attendeeFields || []).forEach(function (f) {
+        var wrap = card.querySelector(".extra[data-field='" + f.id + "']");
+        if (wrap && wrap.hidden) return;
+        var el = form.elements[p + "x_" + f.id];
+        extra[f.label] = f.type === "checkbox" ? (el && el.checked ? "Yes" : "No") : v(p + "x_" + f.id);
+      });
       return {
         firstName: v(p + "firstName"),
         lastName: v(p + "lastName"),
@@ -409,12 +484,28 @@
     };
   }
 
-  function summaryTable(data) {
-    return '<table class="summary-table"><thead><tr><th>Name</th><th>Registration</th><th class="num">Amount</th></tr></thead><tbody>' +
-      data.attendees.map(function (a) {
-        return "<tr><td>" + esc(a.firstName + " " + a.lastName) + "</td><td>" + esc(a.ticketLabel) + '</td><td class="num">' + money(a.price) + "</td></tr>";
-      }).join("") +
-      '</tbody><tfoot><tr><td colspan="2">Total</td><td class="num">' + money(data.total) + "</td></tr></tfoot></table>";
+  function dataLines(data) {
+    return data.attendees.map(function (a) { return { name: a.firstName + " " + a.lastName, label: a.ticketLabel, price: a.price }; });
+  }
+
+  // Admission-ticket style confirmation
+  function admitTicket(ev, data, ref, headline, extra) {
+    var n = data.attendees.length;
+    return '<article class="ticket admit">' +
+      '<div class="stub"><span class="md"><span class="month">Admit</span></span>' +
+        '<span class="day">' + n + "</span>" +
+        '<span class="md"><span class="weekday">' + (n === 1 ? "person" : "people") + "</span></span></div>" +
+      '<div class="ticket-body">' +
+        "<h1>" + esc(headline) + "</h1>" +
+        "<p>" + esc(ev.title) + ", " + esc(fmtDate(ev.date)) + "</p>" +
+        '<p>Confirmation number<br><span class="ref">' + esc(ref) + "</span></p>" +
+        (extra || "") +
+      "</div></article>" +
+      '<div class="panel">' +
+        '<div class="receipt">' + receiptHtml(dataLines(data), data.total) + "</div>" +
+        '<div class="panel-actions"><button type="button" class="btn secondary" onclick="window.print()">Print this page</button>' +
+        '<a href="index.html">Back to all events</a></div>' +
+      "</div>";
   }
 
   function afterRegister(ev, data, res) {
@@ -422,45 +513,33 @@
     var total = typeof res.total === "number" ? res.total : data.total;
     data.total = total;
     window.scrollTo(0, 0);
+    var email = '<p class="muted">A confirmation email is on its way to ' + esc(data.registrant.email) + ".</p>";
 
-    var head = eventPanel(ev);
     if (total === 0) {
-      app.innerHTML = head + done(data, res.ref, "You're registered. A confirmation email is on its way to " + data.registrant.email + ".");
+      app.innerHTML = admitTicket(ev, data, res.ref, "You're registered", email);
       return;
     }
     if (data.method === "check") {
       var ch = C.check || {};
-      app.innerHTML = head + done(data, res.ref, "Your spots are held. Please mail a check to finish registering.") +
-        '<section class="panel"><h2>Mail your check</h2>' +
-          "<p><strong>Amount:</strong> " + money(total) + "<br><strong>Payable to:</strong> " + esc(ch.payableTo || "") + "</p>" +
-          '<p class="pre"><strong>Mail to:</strong>\n' + esc(ch.mailTo || "") + "</p>" +
+      app.innerHTML = admitTicket(ev, data, res.ref, "Your places are held", email) +
+        '<div class="panel"><h2>Mail your check</h2>' +
+          "<p>Make a check for <strong>" + moneyExact(total) + "</strong> payable to <strong>" + esc(ch.payableTo || "") + "</strong>.</p>" +
+          '<p class="pre">' + esc(ch.mailTo || "") + "</p>" +
           (ch.note ? "<p>" + esc(ch.note) + "</p>" : "") +
-          (ev.deadline ? "<p>It needs to arrive by " + esc(fmtShort(ev.deadline)) + ".</p>" : "") +
-        "</section>";
+          (ev.deadline ? "<p>It needs to arrive by " + esc(fmtShort(ev.deadline)) + ". Your registration is complete once it does.</p>" : "") +
+        "</div>";
       return;
     }
 
-    app.innerHTML = head +
-      '<section class="panel"><h2>Review and pay</h2>' +
-        '<p>Confirmation number: <span class="ref">' + esc(res.ref) + "</span></p>" +
-        summaryTable(data) +
-        "<p>Your registration is saved but not complete until payment goes through. Pay with PayPal, or choose <strong>Debit or Credit Card</strong> to pay without a PayPal account.</p>" +
+    app.innerHTML = ticket(ev, { page: true }) +
+      '<div class="panel"><h2>Pay ' + moneyExact(total) + "</h2>" +
+        '<p>Your registration is saved under <strong>' + esc(res.ref) + "</strong>. It is complete once payment goes through.</p>" +
+        '<div class="receipt">' + receiptHtml(dataLines(data), total) + "</div>" +
+        "<p>Pay with PayPal, or choose <strong>Debit or Credit Card</strong> if you don't have a PayPal account.</p>" +
         '<div id="pay-status"></div>' +
         '<div id="paypal-buttons"></div>' +
-      "</section>";
-
+      "</div>";
     mountPayPal(ev, data, res.ref);
-  }
-
-  function done(data, ref, message) {
-    return '<div class="notice ok"><p><strong>' + esc(message) + "</strong></p></div>" +
-      '<section class="panel"><h2>Confirmation</h2>' +
-        '<p>Confirmation number: <span class="ref">' + esc(ref) + "</span></p>" +
-        summaryTable(data) +
-        '<p class="muted">Keep this number. You can print this page for your records.</p>' +
-        '<button type="button" class="btn secondary" onclick="window.print()">Print</button> ' +
-        '<a class="btn link" href="index.html">Back to all events</a>' +
-      "</section>";
   }
 
   function mountPayPal(ev, data, ref) {
@@ -468,14 +547,14 @@
     var status = $("#pay-status");
 
     function paid() {
-      $("#app").innerHTML = eventPanel(ev) +
-        done(data, ref, "Payment received. You're registered, and a receipt is on its way to " + data.registrant.email + ".");
+      $("#app").innerHTML = admitTicket(ev, data, ref, "Payment received",
+        '<p class="muted">A receipt is on its way to ' + esc(data.registrant.email) + ".</p>");
       window.scrollTo(0, 0);
     }
 
     if (DEMO || !C.paypalClientId) {
-      holder.innerHTML = '<div class="notice warn"><p>PayPal isn\'t set up yet' + (DEMO ? " (demo mode)" : "") + ".</p></div>" +
-        (DEMO ? '<button type="button" class="btn" id="fake-pay">Simulate a ' + money(data.total) + " payment</button>" : "");
+      holder.innerHTML = '<div class="notice warn"><p>Online payment isn\'t set up yet' + (DEMO ? " (demo mode)" : "") + ".</p></div>" +
+        (DEMO ? '<button type="button" class="btn" id="fake-pay">Simulate a ' + moneyExact(data.total) + " payment</button>" : "");
       var fake = $("#fake-pay");
       if (fake) fake.addEventListener("click", function () { api("capture", { ref: ref, orderId: "DEMO" }).then(paid); });
       return;
@@ -500,14 +579,14 @@
           });
         },
         onCancel: function () {
-          status.innerHTML = '<div class="notice warn"><p>Payment was canceled. Your spot is saved under ' + esc(ref) + "; you can try again below.</p></div>";
+          status.innerHTML = '<div class="notice warn"><p>Payment canceled. Your registration is still saved under ' + esc(ref) + ". Pay below when you're ready.</p></div>";
         },
         onError: function (err) {
-          status.innerHTML = '<div class="notice error"><p>Payment didn\'t go through: ' + esc((err && err.message) || "unknown error") + ". Please try again.</p></div>";
+          status.innerHTML = '<div class="notice error"><p>The payment didn\'t go through: ' + esc((err && err.message) || "unknown error") + ". Try again, or use a different card.</p></div>";
         }
       }).render("#paypal-buttons");
     };
-    s.onerror = function () { holder.innerHTML = '<div class="notice error"><p>Couldn\'t load PayPal. Check your connection and refresh the page.</p></div>'; };
+    s.onerror = function () { holder.innerHTML = '<div class="notice error"><p>PayPal didn\'t load. Check your connection and refresh the page.</p></div>'; };
     document.head.appendChild(s);
   }
 

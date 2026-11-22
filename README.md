@@ -94,7 +94,7 @@ Add an entry to `events.json` and redeploy the site. Fields:
 | `allowCheck` | offer "pay by check" |
 | `maxAttendees` | most people on one registration (default 25) |
 | `tickets` | list of `{ "id", "label", "price", "minor" }`. `price: 0` is free. `minor: true` asks for a parent/guardian |
-| `attendeeFields` | extra questions per person: `{ "id", "label", "type": "text" or "select", "options": [...], "required": true }` |
+| `attendeeFields` | extra questions per person: `{ "id", "label", "type": "text", "select" or "checkbox", "options": [...], "required": true }`. Add `"tickets": ["girl"]` to ask only for that registration type, and `"showWhen": "<checkbox id>"` to ask only when that box is checked |
 | `waiver` | permission statement they must check (optional) |
 
 The three events in the file are samples with placeholder venues. Replace them before going live.
