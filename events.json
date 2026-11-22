@@ -49,7 +49,7 @@
       },
       {
         "id": "ritual",
-        "label": "She will compete in the Ritual Competition",
+        "label": "Competing in the Ritual Competition",
         "type": "checkbox",
         "tickets": [
           "girl"
@@ -67,6 +67,28 @@
         "options": [
           "Rose Ceremony",
           "Masonic Ribbon Ceremony"
+        ]
+      },
+      {
+        "id": "division",
+        "label": "Division",
+        "type": "derived",
+        "from": "age",
+        "tickets": [
+          "girl"
+        ],
+        "showWhen": "ritual",
+        "ranges": [
+          {
+            "label": "Junior",
+            "min": 11,
+            "max": 15
+          },
+          {
+            "label": "Senior",
+            "min": 16,
+            "max": 20
+          }
         ]
       },
       {

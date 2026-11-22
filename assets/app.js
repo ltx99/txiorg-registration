@@ -275,7 +275,9 @@
     });
     var extras = (ev.attendeeFields || []).map(function (f) {
       var html;
-      if (f.type === "checkbox") {
+      if (f.type === "derived") {
+        html = '<p class="derived"><strong>' + esc(f.label) + ':</strong> <span class="derived-value">Choose her age above</span></p>';
+      } else if (f.type === "checkbox") {
         html = '<label class="choice"><input type="checkbox" name="' + esc(p + "x_" + f.id) + '" value="Yes"> <span>' + esc(f.label) + "</span></label>";
       } else {
         html = field(p + "x_" + f.id, f.label, f.type || "text", { required: !!f.required, options: f.options || [], hint: f.hint });
@@ -300,6 +302,15 @@
         "</div>" +
         extras +
       "</div></div>";
+  }
+
+  // e.g. division from age: { "from": "age", "ranges": [{ "label": "Junior", "min": 11, "max": 15 }] }
+  function derive(f, card) {
+    var src = card.querySelector("[name='a" + card.getAttribute("data-n") + "_x_" + f.from + "']");
+    var n = src ? Number(src.value) : NaN;
+    if (!src || src.value === "" || isNaN(n)) return "";
+    var r = (f.ranges || []).find(function (x) { return n >= x.min && n <= x.max; });
+    return r ? r.label + " (ages " + r.min + "–" + r.max + ")" : "";
   }
 
   function wireForm(ev) {
@@ -353,6 +364,11 @@
           show = !!(box && box.checked && !(depWrap && depWrap.hidden));
         }
         wrap.hidden = !show;
+        var f = (ev.attendeeFields || []).find(function (x) { return x.id === wrap.getAttribute("data-field"); });
+        if (f && f.type === "derived") {
+          var val = derive(f, card);
+          $(".derived-value", wrap).textContent = val || "Choose her age above";
+        }
         $all("input, select, textarea", wrap).forEach(function (el) {
           if (el.type !== "checkbox") el.required = show && wrap.getAttribute("data-required") === "1";
           if (!show) { if (el.type === "checkbox") el.checked = false; else el.value = ""; }
@@ -362,7 +378,7 @@
 
     box.addEventListener("change", function (e) {
       if (e.target.name && /_ticket$/.test(e.target.name)) syncGuardian(e.target.closest(".attendee"));
-      else if (e.target.type === "checkbox") syncExtras(e.target.closest(".attendee"));
+      else if (e.target.closest(".extra")) syncExtras(e.target.closest(".attendee"));
       updateReceipt();
     });
     box.addEventListener("input", function (e) {
@@ -453,6 +469,7 @@
         var wrap = card.querySelector(".extra[data-field='" + f.id + "']");
         if (wrap && wrap.hidden) return;
         var el = form.elements[p + "x_" + f.id];
+        if (f.type === "derived") { var d = derive(f, card); extra[f.label] = d.split(" (")[0]; return; }
         extra[f.label] = f.type === "checkbox" ? (el && el.checked ? "Yes" : "No") : v(p + "x_" + f.id);
       });
       return {
