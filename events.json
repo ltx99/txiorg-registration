@@ -65,8 +65,9 @@
         "showWhen": "ritual",
         "required": true,
         "options": [
+          "Masonic Ribbon Ceremony",
           "Rose Ceremony",
-          "Masonic Ribbon Ceremony"
+          "Gavel Ceremony"
         ]
       },
       {
