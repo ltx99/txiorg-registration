@@ -33,7 +33,7 @@ window.TXIORG_CONFIG = {
 
   // Shown when someone chooses to pay by check.
   check: {
-    payableTo: "Grand Assembly of Texas IORG",
+    payableTo: "Grand Assembly of Texas",
     mailTo: "Texas IORG Event Registration\nP.O. Box 104\nLeander, TX 78646",
     note: "Write your confirmation number on the memo line."
   }
