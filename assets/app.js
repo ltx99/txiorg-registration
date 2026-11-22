@@ -206,6 +206,7 @@
       input = '<textarea id="' + idAttr + '" name="' + esc(name) + '"' + req + "></textarea>";
     } else {
       input = '<input id="' + idAttr + '" type="' + type + '" name="' + esc(name) + '"' + req +
+        (type === "date" ? ' max="' + new Date().toISOString().slice(0, 10) + '"' : "") +
         (opts.autocomplete ? ' autocomplete="' + opts.autocomplete + '"' : "") + ">";
     }
     return '<div class="' + (opts.full ? "full" : "") + '"><label for="' + idAttr + '">' + esc(label) + star + hint + "</label>" + input + "</div>";
@@ -273,7 +274,7 @@
     var ticketOpts = ev.tickets.map(function (t) {
       return { value: t.id, label: t.label + (t.price ? ", " + money(t.price) : (isFree(ev) ? "" : ", free")) };
     });
-    var extras = (ev.attendeeFields || []).map(function (f) {
+    var extras = (ev.attendeeFields || []).filter(function (f) { return f.display !== false; }).map(function (f) {
       var html;
       if (f.type === "derived") {
         html = '<p class="derived"><strong>' + esc(f.label) + ':</strong> <span class="derived-value">Choose her age above</span></p>';
@@ -305,12 +306,23 @@
   }
 
   // e.g. division from age: { "from": "age", "ranges": [{ "label": "Junior", "min": 11, "max": 15 }] }
+  function ageOn(birthIso, onIso) {
+    var b = birthIso.split("-").map(Number), d = onIso.split("-").map(Number);
+    var age = d[0] - b[0];
+    if (d[1] < b[1] || (d[1] === b[1] && d[2] < b[2])) age -= 1;
+    return age;
+  }
+
+  // calc "age": age on the event date from a date-of-birth field.
+  // ranges: map a number to a label, e.g. Junior 11–15, Senior 16–20.
   function derive(f, card) {
     var src = card.querySelector("[name='a" + card.getAttribute("data-n") + "_x_" + f.from + "']");
-    var n = src ? Number(src.value) : NaN;
-    if (!src || src.value === "" || isNaN(n)) return "";
+    if (!src || src.value === "") return "";
+    var n = f.calc === "age" ? ageOn(src.value, state.ev.date) : Number(src.value);
+    if (isNaN(n)) return "";
+    if (!f.ranges) return String(n);
     var r = (f.ranges || []).find(function (x) { return n >= x.min && n <= x.max; });
-    return r ? r.label + " (ages " + r.min + "–" + r.max + ")" : "";
+    return r ? r.label : "";
   }
 
   function wireForm(ev) {
@@ -336,6 +348,16 @@
       syncGuardian(card);
       renumber();
       return card;
+    }
+
+    function checkBirthdate(input) {
+      var f = (ev.attendeeFields || []).find(function (x) { return input.name.slice(-(x.id.length + 3)) === "_x_" + x.id; });
+      input.setCustomValidity("");
+      if (!f || !input.value || f.ageMin == null) return;
+      var age = ageOn(input.value, ev.date);
+      if (age < f.ageMin || age > f.ageMax) {
+        input.setCustomValidity("On " + fmtShort(ev.date) + " she will be " + age + ". Rainbow Girls are " + f.ageMin + " to " + f.ageMax + ". Check the date, or register her as a different type.");
+      }
     }
 
     function syncGuardian(card) {
@@ -379,6 +401,7 @@
     box.addEventListener("change", function (e) {
       if (e.target.name && /_ticket$/.test(e.target.name)) syncGuardian(e.target.closest(".attendee"));
       else if (e.target.closest(".extra")) syncExtras(e.target.closest(".attendee"));
+      if (e.target.type === "date") checkBirthdate(e.target);
       updateReceipt();
     });
     box.addEventListener("input", function (e) {
@@ -468,8 +491,12 @@
       (ev.attendeeFields || []).forEach(function (f) {
         var wrap = card.querySelector(".extra[data-field='" + f.id + "']");
         if (wrap && wrap.hidden) return;
+        if (!wrap) {
+          if (f.tickets && f.tickets.indexOf(v(p + "ticket")) < 0) return;
+          if (f.showWhen) { var dep = form.elements[p + "x_" + f.showWhen]; if (!dep || !dep.checked) return; }
+        }
         var el = form.elements[p + "x_" + f.id];
-        if (f.type === "derived") { var d = derive(f, card); extra[f.label] = d.split(" (")[0]; return; }
+        if (f.type === "derived") { extra[f.label] = derive(f, card); return; }
         extra[f.label] = f.type === "checkbox" ? (el && el.checked ? "Yes" : "No") : v(p + "x_" + f.id);
       });
       return {

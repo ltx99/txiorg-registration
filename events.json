@@ -27,24 +27,25 @@
     ],
     "attendeeFields": [
       {
-        "id": "age",
-        "label": "Age",
-        "type": "select",
+        "id": "birthdate",
+        "label": "Date of birth",
+        "type": "date",
         "tickets": [
           "girl"
         ],
         "required": true,
-        "options": [
-          "11",
-          "12",
-          "13",
-          "14",
-          "15",
-          "16",
-          "17",
-          "18",
-          "19",
-          "20"
+        "ageMin": 11,
+        "ageMax": 20
+      },
+      {
+        "id": "age",
+        "label": "Age on event day",
+        "type": "derived",
+        "display": false,
+        "calc": "age",
+        "from": "birthdate",
+        "tickets": [
+          "girl"
         ]
       },
       {
@@ -74,7 +75,9 @@
         "id": "division",
         "label": "Division",
         "type": "derived",
-        "from": "age",
+        "display": false,
+        "calc": "age",
+        "from": "birthdate",
         "tickets": [
           "girl"
         ],

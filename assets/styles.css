@@ -184,7 +184,7 @@ fieldset { border: none; padding: 0; margin: 0; min-width: 0; }
 label { display: block; font-weight: 700; margin-bottom: .3rem; }
 .req { color: var(--error); }
 .hint { font-weight: 400; color: var(--ink-soft); font-size: .9rem; }
-input[type=text], input[type=email], input[type=tel], select, textarea {
+input[type=text], input[type=email], input[type=tel], input[type=date], select, textarea {
   width: 100%; font: inherit; color: var(--ink); background: var(--paper);
   border: 2px solid #b3a9b5; border-radius: 6px; padding: .55rem .7rem; min-height: 50px;
 }
