@@ -40,6 +40,22 @@
     return ev.tickets.map(function (t) { return t.label + " " + (t.price ? money(t.price) : "free"); }).join(" · ");
   }
 
+  function metaList(ev) {
+    var where = "";
+    if (ev.location) where += "<strong>" + esc(ev.location) + "</strong>";
+    if (ev.address) {
+      where += (where ? "<br>" : "") + esc(ev.address).replace(/\n/g, "<br>");
+      var q = [ev.location, String(ev.address).replace(/\n/g, ", ")].filter(Boolean).join(", ");
+      where += '<br><a href="https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(q) + '" target="_blank" rel="noopener">Get directions</a>';
+    }
+    return '<dl class="event-meta">' +
+      "<dt>When</dt><dd>" + esc(fmtDate(ev.date)) + (ev.time ? "<br>" + esc(ev.time) : "") + "</dd>" +
+      (where ? "<dt>Where</dt><dd>" + where + "</dd>" : "") +
+      "<dt>Cost</dt><dd>" + esc(priceText(ev)) + "</dd>" +
+      (ev.deadline ? "<dt>Register by</dt><dd>" + esc(fmtShort(ev.deadline)) + "</dd>" : "") +
+    "</dl>";
+  }
+
   function loadEvents() {
     return fetch("events.json", { cache: "no-store" }).then(function (r) {
       if (!r.ok) throw new Error("Could not load events.json");
@@ -117,12 +133,7 @@
         return '<article class="panel event-card">' +
           "<h2>" + esc(ev.title) + "</h2>" +
           (ev.summary ? "<p>" + esc(ev.summary) + "</p>" : "") +
-          '<ul class="event-meta">' +
-            "<li><strong>When</strong> " + esc(fmtDate(ev.date)) + (ev.time ? ", " + esc(ev.time) : "") + "</li>" +
-            "<li><strong>Where</strong> " + esc(ev.location || "") + (ev.address ? ", " + esc(ev.address) : "") + "</li>" +
-            "<li><strong>Cost</strong> " + esc(priceText(ev)) + "</li>" +
-            (ev.deadline ? "<li><strong>Register by</strong> " + esc(fmtShort(ev.deadline)) + "</li>" : "") +
-          "</ul>" +
+          metaList(ev) +
           '<div class="actions">' +
             (open
               ? '<a class="btn" href="register.html?event=' + encodeURIComponent(ev.id) + '">Register</a>'
@@ -158,12 +169,7 @@
   function eventPanel(ev) {
     return '<section class="panel event-card">' +
       "<h1>" + esc(ev.title) + "</h1>" +
-      '<ul class="event-meta">' +
-        "<li><strong>When</strong> " + esc(fmtDate(ev.date)) + (ev.time ? ", " + esc(ev.time) : "") + "</li>" +
-        "<li><strong>Where</strong> " + esc(ev.location || "") + (ev.address ? ", " + esc(ev.address) : "") + "</li>" +
-        "<li><strong>Cost</strong> " + esc(priceText(ev)) + "</li>" +
-        (ev.deadline ? "<li><strong>Register by</strong> " + esc(fmtShort(ev.deadline)) + "</li>" : "") +
-      "</ul>" +
+      metaList(ev) +
       (ev.description ? "<p>" + esc(ev.description) + "</p>" : "") +
     "</section>";
   }

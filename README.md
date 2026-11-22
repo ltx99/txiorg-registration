@@ -42,7 +42,7 @@ Use an organization Google account rather than a personal one so the data stays 
    | `PAYPAL_CLIENT_ID` | from step 2 below |
    | `PAYPAL_SECRET` | from step 2 below |
    | `PAYPAL_ENV` | `sandbox` while testing, then `live` |
-   | `REPLY_TO` | `registrations@txiorg.com` (optional) |
+   | `REPLY_TO` | `txiorgtlt@kantex.net` (where replies to confirmation emails go) |
    | `NOTIFY_EMAIL` | address(es) that should get a copy of every confirmation (optional) |
 
    Also set the project time zone to America/Chicago (Project Settings) so deadlines close at the right time.
@@ -86,7 +86,8 @@ Add an entry to `events.json` and redeploy the site. Fields:
 | `id` | unique, lowercase, no spaces – used in the link `register.html?event=id` |
 | `title`, `summary`, `description` | text shown on the pages |
 | `date` | `YYYY-MM-DD`. Events drop off the list after this date |
-| `time`, `location`, `address` | display text |
+| `time`, `location` | display text. `location` is the venue name |
+| `address` | street on the first line, city/state/ZIP on the second, separated by `\n`. A "Get directions" link is added automatically |
 | `deadline` | `YYYY-MM-DD`. Registration closes after this day |
 | `open` | set `false` to close registration early (full, cancelled) |
 | `askAssembly` | ask for assembly name and number (default true) |

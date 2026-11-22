@@ -8,7 +8,7 @@ window.TXIORG_CONFIG = {
   mainSite: "https://www.txiorg.org/",
 
   // Shown on every page and in confirmation emails.
-  contactEmail: "registrations@txiorg.com",
+  contactEmail: "txiorgtlt@kantex.net",
 
   // The Google Apps Script web app URL (ends in /exec).
   // Leave empty to run in demo mode: nothing is saved and payments are simulated.

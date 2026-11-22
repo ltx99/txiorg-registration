@@ -68,9 +68,14 @@ a { color: var(--crimson); }
 .event-list { display: grid; gap: 1.25rem; }
 .event-card { border-left: 6px solid var(--crimson); }
 .event-card h2 { margin-bottom: .35rem; }
-.event-meta { list-style: none; padding: 0; margin: 0 0 .9rem; }
-.event-meta li { margin-bottom: .2rem; }
-.event-meta strong { display: inline-block; min-width: 5.5rem; }
+.event-meta { display: grid; grid-template-columns: max-content 1fr; gap: .55rem 1.25rem; margin: .4rem 0 1rem; }
+.event-meta dt { font-weight: 700; }
+.event-meta dd { margin: 0; }
+.event-meta dd strong { font-weight: 700; }
+@media (max-width: 480px) {
+  .event-meta { grid-template-columns: 1fr; gap: 0; }
+  .event-meta dd { margin-bottom: .7rem; }
+}
 .event-card .actions { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem 1rem; margin-top: 1rem; }
 .tag { display: inline-block; padding: .15rem .6rem; border-radius: 999px; font-size: .85rem; font-weight: 700; background: var(--crimson-tint); color: var(--crimson-dark); }
 .tag.closed { background: #eee; color: #555; }
