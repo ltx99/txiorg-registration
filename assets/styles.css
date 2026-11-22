@@ -1,6 +1,6 @@
 /* Texas IORG event registration
    Idea: an event is an admission ticket. Date on a crimson stub, perforated edge,
-   details on the right. The rainbow appears as the bow (arc), not a stripe. */
+   details on the right. Rainbow stripe across the top of every page. */
 
 :root {
   --ink: #231a22;
@@ -55,18 +55,22 @@ h3 { font-size: 1.15rem; }
 @media (max-width: 600px) { h1 { font-size: 2rem; } h2 { font-size: 1.35rem; } }
 
 /* ---------- header ---------- */
+.rainbow {
+  height: 10px;
+  background: linear-gradient(90deg,
+    var(--bow-1) 0 14.28%, var(--bow-2) 14.28% 28.57%, var(--bow-3) 28.57% 42.85%,
+    var(--bow-4) 42.85% 57.14%, var(--bow-5) 57.14% 71.42%, var(--bow-6) 71.42% 85.71%, var(--bow-7) 85.71%);
+}
 .masthead { background: var(--paper); border-bottom: 1px solid var(--rule); }
 .mast-inner { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding-top: .8rem; padding-bottom: .8rem; }
 .org { display: flex; align-items: center; gap: .6rem; color: var(--ink); text-decoration: none; font-family: var(--serif); font-size: 1.3rem; }
-.org svg { width: 46px; height: 23px; flex: none; }
 .masthead nav a { font-weight: 700; }
 
 /* ---------- index hero ---------- */
 .hero { position: relative; overflow: hidden; background: var(--paper); border-bottom: 1px solid var(--rule); }
 .hero .wrap { position: relative; z-index: 1; padding-top: 2.6rem; padding-bottom: 2.6rem; }
 .hero p { max-width: 30rem; font-size: 1.1rem; color: var(--ink-soft); margin: 0; }
-.hero .bow { position: absolute; right: -60px; bottom: -2px; width: 440px; height: 220px; z-index: 0; }
-@media (max-width: 760px) { .hero .bow { width: 280px; height: 140px; right: -100px; opacity: .45; } }
+
 
 main { padding-top: 2rem; padding-bottom: 3rem; }
 
@@ -256,6 +260,6 @@ input:user-invalid, select:user-invalid { border-color: var(--error); }
 .site-footer p { margin-bottom: .3rem; }
 
 @media print {
-  .masthead nav, .btn, #paypal-buttons, .site-footer, .hero .bow { display: none !important; }
+  .masthead nav, .btn, #paypal-buttons, .site-footer { display: none !important; }
   body { background: #fff; }
 }
