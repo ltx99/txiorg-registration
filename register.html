@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Register | Texas IORG</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+  <div class="rainbow" aria-hidden="true"></div>
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <a class="brand" href="index.html">
+        <span class="brand-name">Texas IORG</span>
+        <span class="brand-sub">Event Registration</span>
+      </a>
+      <nav><a href="index.html">All events</a></nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <div id="demo-banner"></div>
+    <div id="app" aria-live="polite">
+      <p class="muted">Loading…</p>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap" id="footer"></div>
+  </footer>
+
+  <script src="config.js"></script>
+  <script src="assets/app.js"></script>
+  <script>TXIORG.renderRegistration();</script>
+</body>
+</html>

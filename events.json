@@ -1,0 +1,71 @@
+[
+  {
+    "id": "rainbow-university-houston-2027",
+    "title": "Rainbow University – Houston",
+    "date": "2027-02-13",
+    "time": "9:00 AM – 3:00 PM",
+    "location": "Venue name",
+    "address": "Street address, Houston, TX",
+    "summary": "A day of leadership and ritual workshops for Rainbow Girls and their adult leaders.",
+    "description": "Sessions cover ritual, officer duties, public speaking, and service projects. Lunch is included with registration. Girls should wear comfortable clothes and bring their ritual books.",
+    "deadline": "2027-02-06",
+    "open": true,
+    "askAssembly": true,
+    "allowCheck": true,
+    "maxAttendees": 25,
+    "tickets": [
+      { "id": "girl", "label": "Rainbow Girl", "price": 15, "minor": true },
+      { "id": "adult", "label": "Adult / Advisor", "price": 20 }
+    ],
+    "attendeeFields": [
+      { "id": "shirt", "label": "T-shirt size", "type": "select", "required": true,
+        "options": ["Youth M", "Youth L", "Adult S", "Adult M", "Adult L", "Adult XL", "Adult 2XL", "Adult 3XL"] },
+      { "id": "diet", "label": "Food allergies or dietary needs", "type": "text" }
+    ],
+    "waiver": "I give permission for the girls I am registering to take part in this event, and I confirm the information above is correct. Photos taken at the event may be used in Texas IORG publications."
+  },
+  {
+    "id": "grand-officers-retreat-2027",
+    "title": "Grand Floor Officers Retreat",
+    "date": "2027-03-20",
+    "time": "Saturday 10:00 AM – Sunday noon",
+    "location": "Retreat site",
+    "address": "City, TX",
+    "summary": "Overnight retreat for the Grand Floor Officers and their chaperones.",
+    "description": "Registration covers lodging, meals, and materials. Each girl must be registered with a parent or guardian contact.",
+    "deadline": "2027-03-01",
+    "open": true,
+    "askAssembly": true,
+    "allowCheck": false,
+    "maxAttendees": 6,
+    "tickets": [
+      { "id": "officer", "label": "Grand Floor Officer", "price": 85, "minor": true },
+      { "id": "chaperone", "label": "Chaperone", "price": 85 }
+    ],
+    "attendeeFields": [
+      { "id": "office", "label": "Grand office (if an officer)", "type": "text" },
+      { "id": "roommate", "label": "Roommate request", "type": "text" }
+    ],
+    "waiver": "I give permission for the girls I am registering to attend this overnight event and confirm the information above is correct."
+  },
+  {
+    "id": "family-day-2027",
+    "title": "Family Day",
+    "date": "2027-10-09",
+    "time": "10:00 AM – 4:00 PM",
+    "location": "Texas Masonic Retirement Community",
+    "address": "Arlington, TX",
+    "summary": "Free day of games and fellowship with the residents. Let us know you're coming so we can plan.",
+    "description": "Admission is free. Registering helps us plan food and activities.",
+    "deadline": "2027-10-01",
+    "open": true,
+    "askAssembly": true,
+    "maxAttendees": 30,
+    "tickets": [
+      { "id": "girl", "label": "Rainbow Girl", "price": 0, "minor": true },
+      { "id": "adult", "label": "Adult", "price": 0 },
+      { "id": "child", "label": "Child under 11", "price": 0, "minor": true }
+    ],
+    "attendeeFields": []
+  }
+]
